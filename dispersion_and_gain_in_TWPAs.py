@@ -21,7 +21,7 @@ class dispersion_in_JJ_metamaterial:
 
 	def __init__(self):
 
-		self.version = 0.1
+		self.version = 0.1.0
 
 		self.pump_frequency = None				# in GHz
 		self.incident_pump_amplitude = None		
