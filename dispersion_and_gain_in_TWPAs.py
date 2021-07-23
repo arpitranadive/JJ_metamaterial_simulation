@@ -1,3 +1,5 @@
+# Published without any warranty or liability of any kind, user assumes full responsibilities for any and all consequences resulting from usage.
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
@@ -6,8 +8,6 @@ from scipy.optimize import fsolve
 from scipy.integrate import odeint
 from scipy import linalg
 import scipy.constants as cst
-
-
 
 
 
