@@ -1,0 +1,7 @@
+# First, ignore everything
+*
+# Now, whitelist anything that's a directory
+!*/
+# And adding files to track
+!.gitignore
+!*.py
