@@ -21,7 +21,7 @@ class dispersion_in_JJ_metamaterial:
 
 	def __init__(self):
 
-		self.version = 0.1.0
+		self.version = '0.1.1'
 
 		self.pump_frequency = None				# in GHz
 		self.incident_pump_amplitude = None		
@@ -39,6 +39,12 @@ class dispersion_in_JJ_metamaterial:
 		self.L_loop = None						# loop inductance
 
 		self.phi_0 = 2e-15
+
+
+
+	def linear_to_dB(self,linear):
+
+		return 10*(np.log10(linear))
 
 
 	def I(self,phi_s):
@@ -100,3 +106,58 @@ class dispersion_in_JJ_metamaterial:
 			del_k_total_array = np.append(del_k_total_array,del_k_total)
 
 		return del_k_disp_array/self.size_of_one_loop, del_k_kerr_array/self.size_of_one_loop, del_k_total_array/self.size_of_one_loop
+
+
+	def gain(self,w_s):
+
+		pump_frequency = self.pump_frequency
+		pump_amplitude = self.incident_pump_amplitude
+		loss_tangent = self.loss_tangent
+		gamma = self.gamma
+		L_loop = self.L_loop
+		C_g = self.C_g
+		C_J = self.C_J
+		number_of_loops = self.number_of_loops
+
+		w_p = pump_frequency*1e9*2*np.pi
+		w_i = 2*w_p-w_s
+		w_0 = 1.0/(np.sqrt(L_loop*C_g))
+		w_J = 1.0/(np.sqrt(L_loop*C_J))
+		k_p = w_p/(w_0*np.sqrt(1-(w_p/w_J)**2))
+		k_s = w_s/(w_0*np.sqrt(1-(w_s/w_J)**2))
+		k_i = w_i/(w_0*np.sqrt(1-(w_i/w_J)**2))
+		w_til_p = 1-(w_p/w_J)**2
+		w_til_s = 1-(w_s/w_J)**2
+		w_til_i = 1-(w_i/w_J)**2
+		k_p_loss = loss_tangent*k_p/2
+		pump_amplitude_reduced = pump_amplitude*np.exp(-k_p_loss*number_of_loops/2)
+		eta_p = 3*gamma*(k_p**3)*(pump_amplitude_reduced**2)/(8*w_til_p)
+		eta_s = 3*gamma*2*(k_p**2)*k_s*(pump_amplitude_reduced**2)/(8*w_til_s)
+		eta_i = 3*gamma*2*(k_p**2)*k_i*(pump_amplitude_reduced**2)/(8*w_til_i)
+		del_k_disp = 2*k_p-k_i-k_s
+		del_kerr = 2*eta_p-eta_i-eta_s
+		del_k_total = del_k_disp + del_kerr
+
+		k_i_loss = loss_tangent*k_i/2
+		k_s_loss = loss_tangent*k_s/2
+		Phi11 = -1j*0.5*del_k_total-k_s_loss
+		Phi12 = 1j*eta_s*k_i/(k_s*2)
+		Phi21 = -1j*eta_i*k_s/(k_i*2)
+		Phi22 = 1j*0.5*del_k_total-k_i_loss
+		matrix_Phi = np.array([[Phi11[0],Phi12[0]],[Phi21[0],Phi22[0]]])
+		exp_Phi = linalg.expm(matrix_Phi*number_of_loops)
+		gain_lin = abs(exp_Phi[0][0])**2
+
+		return self.linear_to_dB(gain_lin)
+
+
+	def gain_vs_freq(self,freq_array):
+		
+		gain_array = np.array([])
+
+		for freq_s in freq_array:
+
+			w_s = freq_s*1e9*2*np.pi
+			gain_array = np.append(gain_array,self.gain(w_s))
+
+		return gain_array
